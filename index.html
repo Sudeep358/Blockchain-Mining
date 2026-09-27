@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proof of Work — Blockchain Mining Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#0a1020;color:#eef4ff}
+header{padding:24px 6%;background:#0e172b;border-bottom:1px solid #253451;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:23px;font-weight:800}.logo span{color:#55d6be}.tag{font-size:12px;color:#9eabc5;border:1px solid #2b3a59;padding:8px 12px;border-radius:20px}
+main{width:88%;max-width:1180px;margin:30px auto}.hero{padding:30px;border:1px solid #263756;border-radius:18px;background:linear-gradient(135deg,#13203a,#0e172b);margin-bottom:20px}
+.hero h1{font-size:38px;margin:0 0 10px}.hero p{color:#aab7d0;line-height:1.6;max-width:850px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:#111b30;border:1px solid #263756;border-radius:16px;padding:22px}.full{grid-column:1/-1}
+h2,h3{margin-top:0}.muted{color:#aab7d0;line-height:1.6}label{display:block;color:#aab7d0;font-size:13px;margin:12px 0 5px}
+textarea,input,select{width:100%;padding:12px;background:#09111f;color:#fff;border:1px solid #2a3b5b;border-radius:8px}
+button{border:0;border-radius:8px;padding:12px 17px;cursor:pointer;font-weight:700}.primary{background:#21a987;color:#06120f}.secondary{background:#243450;color:white}.danger{background:#8e3040;color:white}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:#0b1426;border:1px solid #263756;border-radius:12px;padding:16px}.stat small{color:#8898b7}.stat b{display:block;font-size:24px;margin-top:6px}
+.output{margin-top:15px;padding:15px;background:#080f1c;border:1px solid #263756;border-radius:10px;font-family:Consolas,monospace;font-size:13px;word-break:break-all;line-height:1.7}
+.mining{margin-top:16px}.bar{height:10px;background:#263450;border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#55d6be}
+.block{background:#0b1426;border:1px solid #2a3b5b;border-radius:14px;padding:18px;margin-top:12px}.blockhead{display:flex;justify-content:space-between}.verified{color:#55d6be}.hash{color:#a9c8ff;font-family:Consolas,monospace;font-size:12px;word-break:break-all}
+.chain{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}.arrow{font-size:26px;color:#55d6be;text-align:center}
+.notice{padding:12px;border-radius:9px;background:#171f32;color:#cbd6eb;border:1px solid #2b3a59}
+.success{color:#55d6be}.bad{color:#ff7184}.yellow{color:#ffd166}
+footer{text-align:center;color:#7585a3;padding:30px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.chain{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.hero h1{font-size:30px}}
+</style>
+</head>
+<body>
+<header><div class="logo">⛓ Proof of Work <span>Mining Lab</span></div><div class="tag">Blockchain Activity Project</div></header>
+<main>
+<section class="hero">
+<h1>Hashing in Blockchain Mining</h1>
+<p>Interactive simulation of Proof of Work. Add transactions, choose a mining difficulty, and let the miner search for a nonce that produces a SHA-256 hash satisfying the target. Then change the block data and observe how the hash changes.</p>
+</section>
+
+<div class="grid">
+<section class="card">
+<h2>1. Create Block</h2>
+<label>Transactions</label>
+<textarea id="tx" rows="5">Alice → Donation Fund: ₹500
+Bob → Donation Fund: ₹1000
+Carol → Donation Fund: ₹750</textarea>
+<label>Previous Block Hash</label>
+<input id="prev" value="00000000000000000000000000000000">
+<label>Mining Difficulty</label>
+<select id="difficulty"><option value="2">2 — Easy</option><option value="3" selected>3 — Medium</option><option value="4">4 — Hard</option><option value="5">5 — Very Hard</option></select>
+<div class="row"><button class="primary" onclick="startMining()">⛏ Mine Block</button><button class="secondary" onclick="resetAll()">Reset</button></div>
+</section>
+
+<section class="card">
+<h2>2. Mining Status</h2>
+<div class="stats">
+<div class="stat"><small>Nonce</small><b id="nonce">—</b></div>
+<div class="stat"><small>Attempts</small><b id="attempts">—</b></div>
+<div class="stat"><small>Time</small><b id="time">—</b></div>
+<div class="stat"><small>Difficulty</small><b id="diff">3</b></div>
+</div>
+<div class="mining"><div class="bar"><i id="progress"></i></div></div>
+<div id="status" class="notice" style="margin-top:14px">Ready to mine.</div>
+<div id="hashOut" class="output">Hash will appear here.</div>
+</section>
+
+<section class="card full">
+<h2>3. Mined Block</h2>
+<div id="blockArea" class="notice">No block mined yet. Start the miner above.</div>
+</section>
+
+<section class="card">
+<h2>4. Blockchain Link</h2>
+<div class="chain">
+<div class="block"><b>Previous Block</b><p class="hash" id="chainPrev">000000000000...</p></div>
+<div class="arrow">→</div>
+<div class="block"><b>Current Block</b><p class="hash" id="chainCurrent">Not mined</p></div>
+</div>
+</section>
+
+<section class="card">
+<h2>5. Tamper Demonstration</h2>
+<p class="muted">After mining, change one character in the transaction data. The original hash will no longer match the recalculated hash.</p>
+<button class="danger" onclick="tamper()">Change One Transaction</button>
+<div id="tamperOut" class="notice" style="margin-top:12px">Waiting for a mined block.</div>
+</section>
+
+<section class="card full">
+<h2>How Proof of Work Works</h2>
+<div class="stats">
+<div class="stat"><small>01</small><b>Collect Data</b><span class="muted">Transactions + previous hash</span></div>
+<div class="stat"><small>02</small><b>Choose Nonce</b><span class="muted">Start searching from 0</span></div>
+<div class="stat"><small>03</small><b>Calculate SHA-256</b><span class="muted">Hash changes for each nonce</span></div>
+<div class="stat"><small>04</small><b>Verify Target</b><span class="muted">Accept only a valid hash</span></div>
+</div>
+<p class="muted">Example target with difficulty 4: the valid hash must begin with <b>0000</b>. This project is an educational local simulation; it does not use real cryptocurrency or a live blockchain network.</p>
+</section>
+</div>
+</main>
+<footer>Hashing in Blockchain Mining • Proof of Work • Educational Project</footer>
+
+<script>
+const enc=new TextEncoder();let mined=null;let mining=false;
+async function sha256(s){const b=await crypto.subtle.digest("SHA-256",enc.encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function val(id){return document.getElementById(id).value}
+async function startMining(){
+ if(mining)return; mining=true;
+ const tx=val("tx"),prev=val("prev"),d=Number(val("difficulty"));document.getElementById("diff").textContent=d;
+ document.getElementById("status").innerHTML='<span class="yellow">⛏ Mining in progress...</span>';
+ document.getElementById("blockArea").textContent="Searching for a valid nonce...";
+ let nonce=0,attempts=0,start=performance.now(),hash="",target="0".repeat(d);
+ while(mining){
+   hash=await sha256(tx+"|"+prev+"|"+nonce);attempts++;
+   if(hash.startsWith(target))break;
+   nonce++;
+   if(attempts%25===0){
+     document.getElementById("nonce").textContent=nonce;
+     document.getElementById("attempts").textContent=attempts.toLocaleString();
+     document.getElementById("hashOut").textContent=hash;
+     document.getElementById("progress").style.width=Math.min((nonce%1000)/10,100)+"%";
+     await new Promise(r=>setTimeout(r,0));
+   }
+ }
+ let elapsed=(performance.now()-start).toFixed(1);mining=false;
+ mined={tx,prev,d,nonce,attempts,hash,elapsed};
+ document.getElementById("nonce").textContent=nonce;
+ document.getElementById("attempts").textContent=attempts.toLocaleString();
+ document.getElementById("time").textContent=elapsed+" ms";
+ document.getElementById("progress").style.width="100%";
+ document.getElementById("hashOut").textContent=hash;
+ document.getElementById("status").innerHTML='<span class="success">✓ Block successfully mined!</span>';
+ document.getElementById("chainPrev").textContent=prev;
+ document.getElementById("chainCurrent").textContent=hash;
+ document.getElementById("blockArea").innerHTML=`<div class="blockhead"><b>BLOCK #1</b><span class="verified">✓ VERIFIED</span></div>
+ <p><b>Transactions</b><br>${tx.replaceAll("\n","<br>")}</p>
+ <p><b>Nonce:</b> ${nonce}</p><p><b>Previous Hash:</b></p><p class="hash">${prev}</p>
+ <p><b>Block Hash:</b></p><p class="hash">${hash}</p>
+ <p><b>Difficulty:</b> ${d} leading zeroes</p>`;
+ document.getElementById("tamperOut").innerHTML='<span class="success">Block is ready. Now change the data and click “Change One Transaction”.</span>';
+}
+async function tamper(){
+ if(!mined){document.getElementById("tamperOut").innerHTML='<span class="bad">Mine a block first.</span>';return}
+ const changed=mined.tx.replace("₹500","₹501");
+ const newHash=await sha256(changed+"|"+mined.prev+"|"+mined.nonce);
+ document.getElementById("tamperOut").innerHTML=`<b>Original hash:</b><div class="hash">${mined.hash}</div><br><b>After changing ₹500 → ₹501:</b><div class="hash">${newHash}</div><br><span class="bad">✗ Hash mismatch — the original Proof-of-Work result is no longer valid.</span>`;
+}
+function resetAll(){location.reload()}
+</script>
+</body>
+</html>
